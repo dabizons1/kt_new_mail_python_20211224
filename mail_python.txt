@@ -1,0 +1,50 @@
+import os
+import smtplib
+from email.encoders import encode_base64
+from email.header import Header
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formatdate
+import openpyxl as xl
+
+mailServer = smtplib.SMTP('smtp.gmail.com', 587)
+mailServer.starttls()
+my_email = "your email"
+password = 'your password'
+
+mailServer.login(my_email, password)
+
+msg = MIMEMultipart()
+PATH = os.getcwd() + "/"
+wb = xl.load_workbook(PATH + "members.xlsx")
+s1 = wb["Sheet1"]
+txt = (f'''{name} 회원님 안녕하세요?
+벌써 2021년도 저물어 가고 있습니다.
+올 한해 정말 수고 많았습니다.
+첨부한 커피 쿠폰으로 조금이나마 따뜻한 연말을 보내시기 바랍니다.
+감사합니다.
+''')
+msg['Subject'] = '2021년 송년 인사'
+for i in range(2, s1.max_row + 1):
+
+    From = my_email
+    To = s1.cell(i,2).value
+
+    body = MIMEText(txt)
+    msg.attach(body)
+
+    files = list()
+    files.append(PATH + 'members.xlsx')
+    files.append(PATH + 'mail_python.xlsx')
+
+    for f in files:
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload(open(f, "rb").read())
+        encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename=' + f)
+        msg.attach(part)
+
+
+    mailServer.sendmail(From, To, msg.as_string())
+mailServer.quit()
